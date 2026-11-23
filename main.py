@@ -15,20 +15,28 @@ ENTRY = (
     "was already gone."
 )
 
-OUTPUT_PATH = "/output/entry.txt"
+OUTPUT_PATH = os.path.join(
+    os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"), "entry.txt"
+)
 
 
-def main() -> None:
-    text = ENTRY.strip()
+def validate_entry(text: str) -> str:
+    """Validate the gate: non-empty, 1-200 chars, single line, UTF-8."""
+    text = text.strip()
     if not text:
         raise SystemExit("entry is empty")
-    if text != ENTRY:
-        raise SystemExit("entry changed unexpectedly")
-    if len(text) > 200:
-        raise SystemExit(f"entry too long: {len(text)} characters")
+    if not 1 <= len(text) <= 200:
+        raise SystemExit(f"entry length out of range: {len(text)} characters")
     if "\n" in text or "\r" in text:
         raise SystemExit("entry must be a single line")
     text.encode("utf-8")  # gate: must be valid UTF-8
+    return text
+
+
+def main() -> None:
+    text = validate_entry(ENTRY)
+    if text != ENTRY:
+        raise SystemExit("entry changed unexpectedly")
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8", newline="\n") as f:
